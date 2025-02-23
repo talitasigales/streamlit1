@@ -22,14 +22,7 @@ def load_data(aba):
         service = build('sheets', 'v4', credentials=credentials)
         sheet = service.spreadsheets()
         
-        # Range configurado para ler:
-        # A: Coluna de KRs/Objetivos
-        # B: Descrição
-        # C: Valor Inicial
-        # D: Valor Atual
-        # E: Meta
-        # F: Observações (se houver)
-        RANGE_NAME = f"{aba}!A1:F50"
+        RANGE_NAME = f"{aba}!A1:E50"  # Ajustado para incluir apenas as colunas necessárias
         
         result = sheet.values().get(
             spreadsheetId=SHEET_ID,
@@ -46,22 +39,23 @@ def load_data(aba):
         data = []
         current_objective = None
         
-        for row in values[1:]:  # Pular cabeçalho
+        for row in values:  # Removido o [1:] para incluir todas as linhas
             if len(row) > 0:  # Verificar se a linha não está vazia
-                if 'OBJETIVO' in row[0]:
-                    current_objective = row[1] if len(row) > 1 else row[0]
-                elif row[0].strip().startswith('KR'):  # Identificar linhas de KR
+                # Verificar se é uma linha de objetivo
+                if 'OBJETIVO' in str(row[0]).upper():
+                    current_objective = row[1]  # O texto do objetivo está na coluna B
+                # Verificar se é uma linha de KR
+                elif 'KR' in str(row[0]).upper():
                     # Garantir que todas as colunas existam
-                    while len(row) < 5:
-                        row.append('')
+                    row_data = row + [''] * (5 - len(row))  # Preencher com vazios se necessário
                     
                     data.append({
                         'Objetivo': current_objective,
                         'KR': row[0],
                         'Descrição': row[1],
-                        'Valor Inicial': row[2],
-                        'Valor Atual': row[3],
-                        'Meta': row[4]
+                        'Valor Inicial': row[2] if len(row) > 2 else '0',
+                        'Valor Atual': row[3] if len(row) > 3 else '0',
+                        'Meta': row[4] if len(row) > 4 else '0'
                     })
         
         df = pd.DataFrame(data)
@@ -93,68 +87,69 @@ if df is not None:
     
     # Para cada objetivo
     for objetivo in df['Objetivo'].unique():
-        st.subheader(objetivo)
-        
-        # Filtrar KRs do objetivo atual
-        krs_obj = df[df['Objetivo'] == objetivo]
-        
-        # Definir número máximo de colunas por linha
-        max_cols = 3  # Você pode ajustar este número
-        
-        # Criar grupos de KRs para distribuir em linhas
-        for i in range(0, len(krs_obj), max_cols):
-            # Pegar um grupo de KRs
-            krs_grupo = krs_obj.iloc[i:i+max_cols]
+        if objetivo is not None:  # Verificar se o objetivo não é None
+            st.subheader(objetivo)
             
-            # Criar colunas para este grupo
-            cols = st.columns(max_cols)
+            # Filtrar KRs do objetivo atual
+            krs_obj = df[df['Objetivo'] == objetivo]
             
-            # Preencher as colunas com os KRs
-            for idx, (_, kr) in enumerate(krs_grupo.iterrows()):
-                with cols[idx]:
-                    try:
-                        # Converter valores para numéricos, removendo símbolos
-                        valor_atual = kr['Valor Atual'].replace('%', '').replace('R$', '').replace('.', '').replace(',', '.') if kr['Valor Atual'] else '0'
-                        meta = kr['Meta'].replace('%', '').replace('R$', '').replace('.', '').replace(',', '.') if kr['Meta'] else '0'
-                        
-                        # Converter para float se não estiver vazio
-                        valor_atual = float(valor_atual) if valor_atual else 0
-                        meta = float(meta) if meta else 0
-                        
-                        # Calcular progresso
-                        progresso = (valor_atual / meta * 100) if meta != 0 else 0
-                        progresso = min(progresso, 100)  # Limitar a 100%
-                        
-                        # Determinar se o valor é percentual ou monetário
-                        is_percentage = '%' in str(kr['Meta'])
-                        is_monetary = 'R$' in str(kr['Meta'])
-                        
-                        # Formatar valor atual e meta
-                        if is_percentage:
-                            valor_display = f"{valor_atual:.1f}%"
-                            meta_display = f"{meta:.1f}%"
-                        elif is_monetary:
-                            valor_display = f"R$ {valor_atual:,.2f}"
-                            meta_display = f"R$ {meta:,.2f}"
-                        else:
-                            valor_display = f"{valor_atual:,.0f}"
-                            meta_display = f"{meta:,.0f}"
-                        
-                        # Mostrar métrica
-                        st.metric(
-                            f"KR {kr['KR']}",
-                            valor_display,
-                            f"Meta: {meta_display}"
-                        )
-                        
-                        # Barra de progresso
-                        st.progress(progresso/100)
-                        
-                        # Descrição do KR
-                        st.write(kr['Descrição'])
-                    except Exception as e:
-                        st.write(f"KR {kr['KR']}: {kr['Descrição']}")
-                        st.write(f"Erro no processamento dos valores: {str(e)}")
+            # Definir número máximo de colunas por linha
+            max_cols = 3  # Você pode ajustar este número
+            
+            # Criar grupos de KRs para distribuir em linhas
+            for i in range(0, len(krs_obj), max_cols):
+                # Pegar um grupo de KRs
+                krs_grupo = krs_obj.iloc[i:i+max_cols]
+                
+                # Criar colunas para este grupo
+                cols = st.columns(max_cols)
+                
+                # Preencher as colunas com os KRs
+                for idx, (_, kr) in enumerate(krs_grupo.iterrows()):
+                    with cols[idx]:
+                        try:
+                            # Converter valores para numéricos, removendo símbolos
+                            valor_atual = kr['Valor Atual'].replace('%', '').replace('R$', '').replace('.', '').replace(',', '.') if kr['Valor Atual'] else '0'
+                            meta = kr['Meta'].replace('%', '').replace('R$', '').replace('.', '').replace(',', '.') if kr['Meta'] else '0'
+                            
+                            # Converter para float se não estiver vazio
+                            valor_atual = float(valor_atual) if valor_atual else 0
+                            meta = float(meta) if meta else 0
+                            
+                            # Calcular progresso
+                            progresso = (valor_atual / meta * 100) if meta != 0 else 0
+                            progresso = min(progresso, 100)  # Limitar a 100%
+                            
+                            # Determinar se o valor é percentual ou monetário
+                            is_percentage = '%' in str(kr['Meta'])
+                            is_monetary = 'R$' in str(kr['Meta'])
+                            
+                            # Formatar valor atual e meta
+                            if is_percentage:
+                                valor_display = f"{valor_atual:.1f}%"
+                                meta_display = f"{meta:.1f}%"
+                            elif is_monetary:
+                                valor_display = f"R$ {valor_atual:,.2f}"
+                                meta_display = f"R$ {meta:,.2f}"
+                            else:
+                                valor_display = f"{valor_atual:,.0f}"
+                                meta_display = f"{meta:,.0f}"
+                            
+                            # Mostrar métrica
+                            st.metric(
+                                f"KR {kr['KR']}",
+                                valor_display,
+                                f"Meta: {meta_display}"
+                            )
+                            
+                            # Barra de progresso
+                            st.progress(progresso/100)
+                            
+                            # Descrição do KR
+                            st.write(kr['Descrição'])
+                        except Exception as e:
+                            st.write(f"KR {kr['KR']}: {kr['Descrição']}")
+                            st.write(f"Erro no processamento dos valores: {str(e)}")
     
     # Visão geral em tabela
     st.subheader("Visão Geral dos KRs")
