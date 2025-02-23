@@ -180,16 +180,7 @@ def load_data(aba):
 # Interface do Dashboard
 st.markdown('<p class="dashboard-title">📊 Dashboard OKRs GROU 2025</p>', unsafe_allow_html=True)
 
-# Logo e controles no sidebar
-st.sidebar.markdown("""
-    <div style='text-align: center; margin-bottom: 40px;'>
-        <svg width="120" height="45" viewBox="0 0 120 45" fill="none">
-            <path d="M35.3 0H84.7C103.682 0 119 15.3177 119 34.3V34.3C119 38.4362 115.636 41.8 111.5 41.8H8.5C4.36375 41.8 1 38.4362 1 34.3V34.3C1 15.3177 16.3177 0 35.3 0Z" fill="#FFFFFF"/>
-            <path d="M44.1213 31V12.2H47.2013V28.304H55.6493V31H44.1213ZM58.3839 31V12.2H69.3399V14.896H61.4639V20.384H68.7079V23.08H61.4639V28.304H69.3399V31H58.3839ZM73.058 31L77.386 12.2H81.362L85.69 31H82.61L81.614 25.848H77.134L76.138 31H73.058ZM77.638 23.152H81.11L79.374 14.896L77.638 23.152Z" fill="#2A2B66"/>
-        </svg>
-    </div>
-""", unsafe_allow_html=True)
-
+# Controles no sidebar
 if st.sidebar.button("🔄 Atualizar Dados"):
     st.cache_data.clear()
     st.rerun()
@@ -367,7 +358,7 @@ if df is not None:
                         <div style="height: 6px; background-color: rgba(229,228,231,0.2); border-radius: 3px;">
                             <div style="width: {progresso}%; height: 100%; background-color: {
                                 '#39FF14' if progresso >= 91 else
-                                '#e5e4e7' if progresso >= 81 else
+                                '#8149f2' if progresso >= 81 else
                                 '#FFD700' if progresso >= 61 else
                                 '#FF0000'
                             }; border-radius: 3px;"></div>
