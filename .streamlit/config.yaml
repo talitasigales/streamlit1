@@ -1,0 +1,13 @@
+credentials:
+  email_domain: "grougp.com.br"
+  allowed_teams:
+    - Marketing
+    - Comercial
+    - Trainers
+    - SDR
+    - ADM
+    - CS
+cookie:
+  expiry_days: 30
+  key: "grou_dashboard_signature_key"
+  name: "dashboard_grou_cookie"
