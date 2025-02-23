@@ -5,52 +5,79 @@ from googleapiclient.discovery import build
 import plotly.express as px
 import plotly.graph_objects as go
 
+# Cores da marca
+CORES = {
+    'primary': '#2a2b66',    # Azul escuro
+    'secondary': '#5abebe',  # Verde água
+    'dark': '#1b1938',      # Azul mais escuro
+    'light': '#e5e4e7',     # Cinza claro
+    'progress_good': '#5abebe',    # Verde água para progresso bom
+    'progress_medium': '#2a2b66',  # Azul para progresso médio
+    'progress_bad': '#1b1938'      # Azul escuro para progresso ruim
+}
+
 # Configuração da página
 st.set_page_config(page_title="Dashboard OKRs - GROU", layout="wide")
 
-# Estilos CSS
-st.markdown("""
+# Estilos CSS atualizados com as cores da marca
+st.markdown(f"""
     <style>
-    .metric-card {
-        background-color: #1E1E1E;
+    .main {{
+        background-color: {CORES['dark']};
+    }}
+    .metric-card {{
+        background-color: {CORES['primary']};
         padding: 20px;
         border-radius: 10px;
-        border: 1px solid #333;
+        border: 1px solid {CORES['secondary']};
         margin: 10px 0;
-    }
-    .objective-header {
-        background-color: #2C3E50;
+    }}
+    .objective-header {{
+        background-color: {CORES['primary']};
         padding: 15px;
         border-radius: 8px;
         margin: 20px 0;
-        border-left: 5px solid #3498DB;
-    }
-    .kr-title {
-        color: #3498DB;
+        border-left: 5px solid {CORES['secondary']};
+    }}
+    .kr-title {{
+        color: {CORES['secondary']};
         font-size: 1.1em;
         margin-bottom: 10px;
-    }
-    .progress-label {
-        color: #95A5A6;
+        font-weight: bold;
+    }}
+    .progress-label {{
+        color: {CORES['light']};
         font-size: 0.9em;
         margin-top: 5px;
-    }
-    .stProgress > div > div {
-        background-color: #2ECC71;
-    }
-    .status-indicator {
+    }}
+    .stProgress > div > div {{
+        background-color: {CORES['secondary']};
+    }}
+    .status-indicator {{
         font-size: 24px;
         margin-top: 10px;
-    }
-    .metric-value {
+    }}
+    .metric-value {{
         font-size: 1.8em;
         font-weight: bold;
         margin: 10px 0;
-    }
-    .metric-target {
+        color: {CORES['light']};
+    }}
+    .metric-target {{
         font-size: 1em;
-        color: #95A5A6;
-    }
+        color: {CORES['secondary']};
+    }}
+    .description-text {{
+        color: {CORES['light']};
+        font-size: 0.9em;
+        opacity: 0.8;
+    }}
+    .stSelectbox {{
+        background-color: {CORES['primary']};
+    }}
+    .stMarkdown {{
+        color: {CORES['light']};
+    }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -91,9 +118,13 @@ def load_data(aba):
                 elif 'KR' in str(row[0]).upper():
                     row_data = row + [''] * (5 - len(row))
                     
+                    kr_number = row[0].strip()
+                    if 'KR' in kr_number.upper():
+                        kr_number = kr_number.upper().replace('KR', '').strip()
+                    
                     data.append({
                         'Objetivo': current_objective,
-                        'KR': row[0],
+                        'KR': kr_number,
                         'Descrição': row[1],
                         'Valor Inicial': row[2] if len(row) > 2 else '0',
                         'Valor Atual': row[3] if len(row) > 3 else '0',
@@ -130,7 +161,7 @@ if df is not None:
             # Cabeçalho do Objetivo
             st.markdown(f"""
                 <div class="objective-header">
-                    <h2 style="color: white; margin: 0;">{objetivo}</h2>
+                    <h2 style="color: {CORES['light']}; margin: 0;">{objetivo}</h2>
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -172,23 +203,23 @@ if df is not None:
                                 valor_display = f"{valor_atual:,.0f}"
                                 meta_display = f"{meta:,.0f}"
                             
-                            # Determinar cor do status
+                            # Determinar cor do status baseado nas cores da marca
                             if progresso >= 100:
-                                status_color = "#2ECC71"  # Verde
-                                status_icon = "🟢"
+                                status_color = CORES['secondary']  # Verde água
+                                status_icon = "●"
                             elif progresso >= 70:
-                                status_color = "#F1C40F"  # Amarelo
-                                status_icon = "🟡"
+                                status_color = CORES['primary']    # Azul
+                                status_icon = "●"
                             else:
-                                status_color = "#E74C3C"  # Vermelho
-                                status_icon = "🔴"
+                                status_color = CORES['dark']      # Azul escuro
+                                status_icon = "●"
                             
-                            # Card do KR
+                            # Card do KR com as cores da marca
                             st.markdown(f"""
                                 <div class="metric-card">
-                                    <div class="kr-title">KR {kr['KR']} {status_icon}</div>
-                                    <p style="font-size: 0.9em; color: #95A5A6;">{kr['Descrição']}</p>
-                                    <div class="metric-value" style="color: {status_color}">{valor_display}</div>
+                                    <div class="kr-title">KR {kr['KR']} <span style="color: {status_color}">{status_icon}</span></div>
+                                    <p class="description-text">{kr['Descrição']}</p>
+                                    <div class="metric-value" style="color: {CORES['secondary']}">{valor_display}</div>
                                     <div class="metric-target">Meta: {meta_display}</div>
                                 </div>
                                 """, unsafe_allow_html=True)
@@ -205,9 +236,9 @@ if df is not None:
                             st.error(f"Erro ao processar KR {kr['KR']}: {str(e)}")
 
     # Gráfico de visão geral
-    st.markdown("""
+    st.markdown(f"""
         <div class="objective-header">
-            <h2 style="color: white; margin: 0;">Visão Geral do Progresso</h2>
+            <h2 style="color: {CORES['light']}; margin: 0;">Visão Geral do Progresso</h2>
         </div>
         """, unsafe_allow_html=True)
     
@@ -221,13 +252,13 @@ if df is not None:
                 progresso = (valor_atual / meta * 100) if meta != 0 else 0
                 progresso = min(progresso, 100)
                 
-                # Cor baseada no progresso
+                # Cor baseada no progresso usando as cores da marca
                 if progresso >= 100:
-                    cor = '#2ECC71'  # Verde
+                    cor = CORES['secondary']  # Verde água
                 elif progresso >= 70:
-                    cor = '#F1C40F'  # Amarelo
+                    cor = CORES['primary']    # Azul
                 else:
-                    cor = '#E74C3C'  # Vermelho
+                    cor = CORES['dark']       # Azul escuro
                 
                 fig.add_trace(go.Bar(
                     name=f"KR {kr['KR']}",
@@ -248,7 +279,7 @@ if df is not None:
             showlegend=False,
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='white'),
+            font=dict(color=CORES['light']),
             margin=dict(t=40, l=40, r=40, b=40)
         )
         
@@ -258,4 +289,8 @@ if df is not None:
 
 # Rodapé
 st.markdown("---")
-st.markdown("Dashboard OKRs GROU • Atualizado automaticamente")
+st.markdown(f"""
+    <div style="text-align: center; color: {CORES['light']};">
+        Dashboard OKRs GROU • Atualizado automaticamente
+    </div>
+    """, unsafe_allow_html=True)
