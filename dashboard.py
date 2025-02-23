@@ -28,10 +28,11 @@ st.markdown(f"""
     /* Título principal do dashboard */
     .dashboard-title {{
         color: {CORES['accent']};
-        font-size: 26px !important;
+        font-size: 31px !important;
         font-weight: bold;
         margin-bottom: 40px;
         padding: 20px 0;
+        text-align: center;
     }}
     
     /* Título do time */
@@ -39,8 +40,8 @@ st.markdown(f"""
         color: {CORES['accent']};
         font-size: 24px !important;
         font-weight: bold;
-        margin: 40px 0;
-        padding: 20px 0;
+        margin: 20px 0 10px 0;
+        padding: 10px 0;
     }}
     
     /* Título dos objetivos */
@@ -48,13 +49,8 @@ st.markdown(f"""
         color: {CORES['accent']};
         font-size: 20px !important;
         font-weight: bold;
-        margin: 60px 0 30px 0;
-        padding: 20px 0;
-    }}
-    
-    /* Seção de objetivo */
-    .objective-section {{
-        margin-bottom: 80px;
+        margin: 30px 0 16.5px 0;
+        padding: 10px 0;
     }}
     
     /* Cards de KR */
@@ -81,7 +77,7 @@ st.markdown(f"""
     
     /* Valores e métricas */
     .metric-value {{
-        color: {CORES['accent']};
+        color: {CORES['white']};
         font-size: 2em;
         font-weight: bold;
         margin: 15px 0;
@@ -106,18 +102,19 @@ st.markdown(f"""
     
     /* Botões e seletores */
     .stSelectbox [data-baseweb="select"] {{
-        background-color: {CORES['accent']};
+        background-color: {CORES['card']};
     }}
     
     .stButton button {{
-        background-color: {CORES['white']};
-        color: {CORES['white']};
-        border: none;
+        background-color: {CORES['accent']} !important;
+        color: {CORES['white']} !important;
+        border: none !important;
+        width: 100%;
     }}
     
     /* Sidebar */
     .sidebar .sidebar-content {{
-        background-color: {CORES['accent']};
+        background-color: {CORES['background']};
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -182,14 +179,11 @@ def load_data(aba):
 # Interface do Dashboard
 st.markdown('<p class="dashboard-title">📊 Dashboard OKRs GROU 2025</p>', unsafe_allow_html=True)
 
-# Botão de atualização
-col1, col2, col3 = st.columns([1,1,1])
-with col3:
-    if st.button("🔄 Atualizar Dados"):
-        st.cache_data.clear()
-        st.rerun()
-
-# Seletor de Time na sidebar
+# Sidebar com controles
+st.sidebar.title("Controles")
+if st.sidebar.button("🔄 Atualizar Dados"):
+    st.cache_data.clear()
+    st.rerun()
 selected_team = st.sidebar.selectbox("Selecione o Time", TIMES)
 
 # Carregar dados do time selecionado
@@ -197,13 +191,13 @@ df = load_data(selected_team)
 if df is not None:
     st.markdown(f'<p class="team-title">OKRs - Time {selected_team}</p>', unsafe_allow_html=True)
     
-    for objetivo in df['Objetivo'].unique():
+    for idx, objetivo in enumerate(df['Objetivo'].unique(), 1):
         if objetivo is not None:
             # Início da seção do objetivo
             st.markdown('<div class="objective-section">', unsafe_allow_html=True)
             
-            # Título do Objetivo
-            st.markdown(f'<p class="objective-title">{objetivo}</p>', unsafe_allow_html=True)
+            # Título do Objetivo com número
+            st.markdown(f'<p class="objective-title">Objetivo {idx}: {objetivo}</p>', unsafe_allow_html=True)
             
             # Filtrar KRs do objetivo atual
             krs_obj = df[df['Objetivo'] == objetivo]
@@ -307,53 +301,70 @@ if df is not None:
         # Calcular progresso geral do time
         team_progress = sum(progress_by_objective.values()) / len(progress_by_objective) if progress_by_objective else 0
         
-        # Mostrar progresso geral
-        col1, col2, col3 = st.columns([1,2,1])
+        # Layout com duas colunas para velocímetro e progresso por objetivo
+        col1, col2 = st.columns([1, 1])
+        
+        with col1:
+            # Criar velocímetro
+            fig = go.Figure(go.Indicator(
+                mode = "gauge+number",
+                value = team_progress,
+                number = {'suffix': "%", 'font': {'size': 40, 'color': CORES['white']}},
+                title = {'text': "Progresso Geral do Time", 'font': {'size': 20, 'color': CORES['accent']}},
+                gauge = {
+                    'axis': {'range': [0, 100], 'tickcolor': CORES['white']},
+                    'bar': {'color': 
+                        '#39FF14' if team_progress >= 91 else
+                        '#2a2b66' if team_progress >= 81 else
+                        '#FFD700' if team_progress >= 61 else
+                        '#FF0000'
+                    },
+                    'bgcolor': "rgba(255, 255, 255, 0.1)",
+                    'borderwidth': 2,
+                    'bordercolor': CORES['card'],
+                    'steps': [
+                        {'range': [0, 60], 'color': 'rgba(255, 0, 0, 0.2)'},
+                        {'range': [61, 80], 'color': 'rgba(255, 215, 0, 0.2)'},
+                        {'range': [81, 90], 'color': 'rgba(42, 43, 102, 0.2)'},
+                        {'range': [91, 100], 'color': 'rgba(57, 255, 20, 0.2)'}
+                    ]
+                }
+            ))
+            
+            fig.update_layout(
+                paper_bgcolor = CORES['background'],
+                plot_bgcolor = CORES['background'],
+                font = {'color': CORES['white']},
+                height = 300,
+                margin = dict(t=60, b=0)
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
         
         with col2:
-            st.markdown(f"""
-                <div style="text-align: center; padding: 30px; background-color: {CORES['card']}; border-radius: 10px; margin: 20px 0;">
-                    <h2 style="color: {CORES['accent']}; font-size: 22px; margin-bottom: 20px;">
-                        Progresso Geral do Time
-                    </h2>
-                    <div style="font-size: 48px; color: {CORES['white']}; margin: 20px 0;">
-                        {team_progress:.1f}%
-                    </div>
-                    <div style="height: 10px; background-color: rgba(229,228,231,0.2); border-radius: 5px; margin: 20px 0;">
-                        <div style="width: {team_progress}%; height: 100%; background-color: {
-                            '#39FF14' if team_progress >= 91 else
-                            '#2a2b66' if team_progress >= 81 else
-                            '#FFD700' if team_progress >= 61 else
-                            '#FF0000'
-                        }; border-radius: 5px;"></div>
-                    </div>
-                </div>
+            st.markdown("""
+                <h3 style="color: #5abebe; font-size: 18px; margin-bottom: 20px;">
+                    Progresso por Objetivo
+                </h3>
             """, unsafe_allow_html=True)
-        
-        # Mostrar progresso por objetivo
-        st.markdown("""
-            <h3 style="color: #5abebe; font-size: 18px; margin: 30px 0 20px 0;">
-                Progresso por Objetivo
-            </h3>
-        """, unsafe_allow_html=True)
-        
-        for objetivo, progresso in progress_by_objective.items():
-            st.markdown(f"""
-                <div style="padding: 15px; background-color: {CORES['card']}; border-radius: 8px; margin: 10px 0;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                        <span style="color: {CORES['white']};">{objetivo}</span>
-                        <span style="color: {CORES['accent']};">{progresso:.1f}%</span>
+            
+            for objetivo, progresso in progress_by_objective.items():
+                st.markdown(f"""
+                    <div style="padding: 15px; background-color: {CORES['card']}; border-radius: 8px; margin: 10px 0;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <span style="color: {CORES['white']};">{objetivo}</span>
+                            <span style="color: {CORES['accent']};">{progresso:.1f}%</span>
+                        </div>
+                        <div style="height: 6px; background-color: rgba(229,228,231,0.2); border-radius: 3px;">
+                            <div style="width: {progresso}%; height: 100%; background-color: {
+                                '#39FF14' if progresso >= 91 else
+                                '#2a2b66' if progresso >= 81 else
+                                '#FFD700' if progresso >= 61 else
+                                '#FF0000'
+                            }; border-radius: 3px;"></div>
+                        </div>
                     </div>
-                    <div style="height: 6px; background-color: rgba(229,228,231,0.2); border-radius: 3px;">
-                        <div style="width: {progresso}%; height: 100%; background-color: {
-                            '#39FF14' if progresso >= 91 else
-                            '#2a2b66' if progresso >= 81 else
-                            '#FFD700' if progresso >= 61 else
-                            '#FF0000'
-                        }; border-radius: 3px;"></div>
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
+                """, unsafe_allow_html=True)
 
     except Exception as e:
         st.error(f"Erro ao gerar visualização de progresso: {str(e)}")
