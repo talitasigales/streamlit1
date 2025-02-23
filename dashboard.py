@@ -55,10 +55,11 @@ st.markdown(f"""
     
     /* Cards de KR */
     .metric-card {{
-        background-color: {CORES['card']};
+        background-color: transparent;
         padding: 20px;
         border-radius: 10px;
         margin: 10px 0;
+        border: 1px solid {CORES['accent']};
     }}
     
     /* Título e descrição das KRs */
@@ -77,7 +78,7 @@ st.markdown(f"""
     
     /* Valores e métricas */
     .metric-value {{
-        color: {CORES['white']};
+        color: {CORES['accent']};
         font-size: 2em;
         font-weight: bold;
         margin: 15px 0;
@@ -253,7 +254,7 @@ if df is not None:
                             if progresso >= 91:
                                 progress_color = '#39FF14'  # Verde neon
                             elif progresso >= 81:
-                                progress_color = '#2a2b66'  # Azul
+                                progress_color = '#e5e4e7'  # Cinza claro (ajustado)
                             elif progresso >= 61:
                                 progress_color = '#FFD700'  # Amarelo
                             else:
@@ -323,7 +324,7 @@ if df is not None:
                     'axis': {'range': [0, 100], 'tickcolor': CORES['white']},
                     'bar': {'color': 
                         '#39FF14' if team_progress >= 91 else
-                        '#2a2b66' if team_progress >= 81 else
+                        '#e5e4e7' if team_progress >= 81 else
                         '#FFD700' if team_progress >= 61 else
                         '#FF0000'
                     },
@@ -332,7 +333,7 @@ if df is not None:
                     'steps': [
                         {'range': [0, 60], 'color': 'rgba(255, 0, 0, 0.2)'},
                         {'range': [61, 80], 'color': 'rgba(255, 215, 0, 0.2)'},
-                        {'range': [81, 90], 'color': 'rgba(42, 43, 102, 0.2)'},
+                        {'range': [81, 90], 'color': 'rgba(229, 228, 231, 0.2)'},
                         {'range': [91, 100], 'color': 'rgba(57, 255, 20, 0.2)'}
                     ]
                 }
@@ -358,7 +359,7 @@ if df is not None:
             
             for objetivo, progresso in progress_by_objective.items():
                 st.markdown(f"""
-                    <div style="padding: 15px; background-color: {CORES['card']}; border-radius: 8px; margin: 10px 0;">
+                    <div style="padding: 15px; background-color: transparent; border: 1px solid {CORES['accent']}; border-radius: 8px; margin: 10px 0;">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
                             <span style="color: {CORES['white']};">{objetivo}</span>
                             <span style="color: {CORES['accent']};">{progresso:.1f}%</span>
@@ -366,7 +367,7 @@ if df is not None:
                         <div style="height: 6px; background-color: rgba(229,228,231,0.2); border-radius: 3px;">
                             <div style="width: {progresso}%; height: 100%; background-color: {
                                 '#39FF14' if progresso >= 91 else
-                                '#2a2b66' if progresso >= 81 else
+                                '#e5e4e7' if progresso >= 81 else
                                 '#FFD700' if progresso >= 61 else
                                 '#FF0000'
                             }; border-radius: 3px;"></div>
