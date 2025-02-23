@@ -9,7 +9,7 @@ st.set_page_config(page_title="Grou - OKRs 2025", layout="wide")
 
 # Configurações do Google Sheets
 SHEET_ID = '1g-6qI3WKVJ97TzSH61vCjcUuyEUTFxNVGCk9UlCRIqk'  # Seu ID da planilha
-RANGE_NAME = 'Sheet1!A1:Z1000'  # Ajuste o range conforme sua planilha
+RANGE_NAME = 'Sheet1!A1:F1000'  # Ajuste o range conforme sua planilha
 
 # Função para ler dados do Google Sheets
 @st.cache_data(ttl=600)
