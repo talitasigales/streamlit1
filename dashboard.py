@@ -28,7 +28,7 @@ st.markdown(f"""
     /* Título principal do dashboard */
     .dashboard-title {{
         color: {CORES['accent']};
-        font-size: 26px;
+        font-size: 40px;
         font-weight: bold;
         margin-bottom: 30px;
     }}
@@ -36,7 +36,7 @@ st.markdown(f"""
     /* Título do time */
     .team-title {{
         color: {CORES['accent']};
-        font-size: 24px;
+        font-size: 38px;
         font-weight: bold;
         margin: 20px 0;
     }}
@@ -51,8 +51,8 @@ st.markdown(f"""
     
     /* Título dos objetivos */
     .objective-title {{
-        color: {CORES['accent']};
-        font-size: 20px;
+        color: {CORES['white']};
+        font-size: 36px;
         font-weight: bold;
         margin: 30px 0 20px 0;
         padding: 0;
@@ -74,7 +74,7 @@ st.markdown(f"""
     
     /* Valores e métricas */
     .metric-value {{
-        color: {CORES['white']};
+        color: {CORES['accent']};
         font-size: 2em;
         font-weight: bold;
         margin: 15px 0;
@@ -110,7 +110,7 @@ st.markdown(f"""
     
     /* Sidebar */
     .sidebar .sidebar-content {{
-        background-color: {CORES['background']};
+        background-color: {CORES['accent']};
     }}
     </style>
     """, unsafe_allow_html=True)
