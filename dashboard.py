@@ -25,12 +25,20 @@ st.markdown(f"""
         background-color: {CORES['background']};
     }}
     
-    /* Título principal */
-    .title {{
+    /* Título principal do dashboard */
+    .dashboard-title {{
         color: {CORES['accent']};
-        font-size: 2em;
+        font-size: 26px;
         font-weight: bold;
         margin-bottom: 30px;
+    }}
+    
+    /* Título do time */
+    .team-title {{
+        color: {CORES['accent']};
+        font-size: 24px;
+        font-weight: bold;
+        margin: 20px 0;
     }}
     
     /* Cards de KR */
@@ -44,16 +52,24 @@ st.markdown(f"""
     /* Título dos objetivos */
     .objective-title {{
         color: {CORES['accent']};
-        font-size: 1.5em;
+        font-size: 20px;
+        font-weight: bold;
         margin: 30px 0 20px 0;
         padding: 0;
     }}
     
-    /* Título das KRs */
+    /* Título e descrição das KRs */
     .kr-title {{
         color: {CORES['accent']};
-        font-size: 1.1em;
+        font-size: 18px;
+        font-weight: bold;
         margin-bottom: 15px;
+    }}
+    
+    .kr-description {{
+        color: {CORES['white']};
+        font-size: 18px;
+        margin: 10px 0;
     }}
     
     /* Valores e métricas */
@@ -79,14 +95,6 @@ st.markdown(f"""
     /* Barra de progresso */
     .stProgress > div > div {{
         background-color: {CORES['light']};
-    }}
-    
-    /* Descrição */
-    .description-text {{
-        color: {CORES['white']};
-        font-size: 0.9em;
-        opacity: 0.8;
-        margin: 10px 0;
     }}
     
     /* Botões e seletores */
@@ -165,7 +173,7 @@ def load_data(aba):
         return None
 
 # Interface do Dashboard
-st.markdown('<p class="title">📊 Dashboard OKRs GROU 2025</p>', unsafe_allow_html=True)
+st.markdown('<p class="dashboard-title">📊 Dashboard OKRs GROU 2025</p>', unsafe_allow_html=True)
 
 # Botão de atualização
 col1, col2, col3 = st.columns([1,1,1])
@@ -180,11 +188,11 @@ selected_team = st.sidebar.selectbox("Selecione o Time", TIMES)
 # Carregar dados do time selecionado
 df = load_data(selected_team)
 if df is not None:
-    st.markdown(f'<p class="title" style="font-size: 1.5em;">OKRs - Time {selected_team}</p>', unsafe_allow_html=True)
+    st.markdown(f'<p class="team-title">OKRs - Time {selected_team}</p>', unsafe_allow_html=True)
     
     for objetivo in df['Objetivo'].unique():
         if objetivo is not None:
-            # Título do Objetivo (sem caixa/contorno)
+            # Título do Objetivo
             st.markdown(f'<p class="objective-title">{objetivo}</p>', unsafe_allow_html=True)
             
             # Filtrar KRs do objetivo atual
@@ -230,17 +238,27 @@ if df is not None:
                                 valor_display = f"{valor_atual:,.0f}"
                                 meta_display = f"{meta:,.0f}"
                                 restante_display = f"{valor_restante:,.0f}"
+
+                            # Determinar cor da barra de progresso baseado no atingimento
+                            if progresso >= 91:
+                                progress_color = '#39FF14'  # Verde neon para 91-100%
+                            elif progresso >= 81:
+                                progress_color = '#2a2b66'  # Azul para 81-90%
+                            elif progresso >= 61:
+                                progress_color = '#FFD700'  # Amarelo para 61-80%
+                            else:
+                                progress_color = '#FF0000'  # Vermelho para 0-60%
                             
                             # Card do KR com novo layout
                             st.markdown(f"""
                                 <div class="metric-card">
                                     <div class="kr-title">KR {kr['KR']}</div>
-                                    <p class="description-text">{kr['Descrição']}</p>
+                                    <p class="kr-description">{kr['Descrição']}</p>
                                     <div class="metric-value">{valor_display}</div>
                                     <div class="metric-target">Meta: {meta_display}</div>
                                     <div style="margin: 15px 0;">
                                         <div style="height: 6px; background-color: rgba(229,228,231,0.2); border-radius: 3px;">
-                                            <div style="width: {progresso}%; height: 100%; background-color: {CORES['light']}; border-radius: 3px;"></div>
+                                            <div style="width: {progresso}%; height: 100%; background-color: {progress_color}; border-radius: 3px; transition: all 0.3s ease;"></div>
                                         </div>
                                     </div>
                                     <div class="progress-label" style="display: flex; justify-content: space-between;">
@@ -266,13 +284,23 @@ if df is not None:
                 progresso = (valor_atual / meta * 100) if meta != 0 else 0
                 progresso = min(progresso, 100)
                 
+                # Determinar cor da barra baseado no progresso
+                if progresso >= 91:
+                    bar_color = '#39FF14'  # Verde neon
+                elif progresso >= 81:
+                    bar_color = '#2a2b66'  # Azul
+                elif progresso >= 61:
+                    bar_color = '#FFD700'  # Amarelo
+                else:
+                    bar_color = '#FF0000'  # Vermelho
+                
                 fig.add_trace(go.Bar(
                     name=f"KR {kr['KR']}",
                     x=[f"{kr['Descrição'][:30]}..."],
                     y=[progresso],
                     text=f"{progresso:.1f}%",
                     textposition='auto',
-                    marker_color=CORES['accent']
+                    marker_color=bar_color
                 ))
             except:
                 continue
