@@ -179,8 +179,13 @@ def load_data(aba):
 # Interface do Dashboard
 st.markdown('<p class="dashboard-title">📊 Dashboard OKRs GROU 2025</p>', unsafe_allow_html=True)
 
-# Sidebar com controles
-st.sidebar.title("Controles")
+# Logo e controles no sidebar
+st.sidebar.markdown("""
+    <div style='text-align: center; margin-bottom: 40px;'>
+        <img src='https://raw.githubusercontent.com/talitasigales/streamlit1/main/grou-branco.png' width='120px'>
+    </div>
+""", unsafe_allow_html=True)
+
 if st.sidebar.button("🔄 Atualizar Dados"):
     st.cache_data.clear()
     st.rerun()
@@ -305,7 +310,7 @@ if df is not None:
         col1, col2 = st.columns([1, 1])
         
         with col1:
-            # Criar velocímetro
+            # Criar velocímetro sem background
             fig = go.Figure(go.Indicator(
                 mode = "gauge+number",
                 value = team_progress,
@@ -319,9 +324,8 @@ if df is not None:
                         '#FFD700' if team_progress >= 61 else
                         '#FF0000'
                     },
-                    'bgcolor': "rgba(255, 255, 255, 0.1)",
-                    'borderwidth': 2,
-                    'bordercolor': CORES['card'],
+                    'bgcolor': "transparent",
+                    'borderwidth': 0,
                     'steps': [
                         {'range': [0, 60], 'color': 'rgba(255, 0, 0, 0.2)'},
                         {'range': [61, 80], 'color': 'rgba(255, 215, 0, 0.2)'},
@@ -332,14 +336,15 @@ if df is not None:
             ))
             
             fig.update_layout(
-                paper_bgcolor = CORES['background'],
-                plot_bgcolor = CORES['background'],
+                paper_bgcolor = "transparent",
+                plot_bgcolor = "transparent",
                 font = {'color': CORES['white']},
                 height = 300,
-                margin = dict(t=60, b=0)
+                margin = dict(t=60, b=0),
+                showlegend = False
             )
             
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
         
         with col2:
             st.markdown("""
