@@ -1,5 +1,7 @@
-streamlit
+streamlit==1.42.2
 pandas
 plotly
 google-api-python-client
 oauth2client
+PyYAML
+streamlit-authenticator
