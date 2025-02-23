@@ -350,4 +350,29 @@ if df is not None:
             
             for objetivo, progresso in progress_by_objective.items():
                 st.markdown(f"""
-                    <div style
+                    <div style="padding: 15px; background-color: transparent; border: 1px solid {CORES['accent']}; border-radius: 8px; margin: 10px 0;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <span style="color: {CORES['white']};">{objetivo}</span>
+                            <span style="color: {CORES['accent']};">{progresso:.1f}%</span>
+                        </div>
+                        <div style="height: 6px; background-color: rgba(229,228,231,0.2); border-radius: 3px;">
+                            <div style="width: {progresso}%; height: 100%; background-color: {
+                                '#39FF14' if progresso >= 91 else
+                                '#8149f2' if progresso >= 81 else
+                                '#FFD700' if progresso >= 61 else
+                                '#FF0000'
+                            }; border-radius: 3px;"></div>
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+    except Exception as e:
+        st.error(f"Erro ao gerar visualização de progresso: {str(e)}")
+
+# Rodapé
+st.markdown("---")
+st.markdown(f"""
+    <div style="text-align: center; color: {CORES['white']};">
+        Dashboard OKRs GROU • Atualizado automaticamente
+    </div>
+    """, unsafe_allow_html=True)
