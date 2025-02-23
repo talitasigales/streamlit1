@@ -241,7 +241,7 @@ if df is not None:
 
                             # Determinar cor da barra de progresso baseado no atingimento
                             if progresso >= 91:
-                                progress_color = '#39FF14'  # Verde neon para 91-100%
+                                progress_color = '#5abebe'  # Azul turquesa para 91-100%
                             elif progresso >= 81:
                                 progress_color = '#2a2b66'  # Azul para 81-90%
                             elif progresso >= 61:
