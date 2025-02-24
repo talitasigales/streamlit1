@@ -117,6 +117,14 @@ st.markdown(f"""
     .sidebar .sidebar-content {{
         background-color: {CORES['background']};
     }}
+
+    /* Última atualização */
+    .last-update {{
+        color: {CORES['accent']};
+        font-size: 14px;
+        text-align: right;
+        margin-bottom: 20px;
+    }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -134,7 +142,7 @@ def load_data(aba):
         service = build('sheets', 'v4', credentials=credentials)
         sheet = service.spreadsheets()
         
-        RANGE_NAME = f"{aba}!A1:E50"
+        RANGE_NAME = f"{aba}!A1:H50"
         
         result = sheet.values().get(
             spreadsheetId=SHEET_ID,
@@ -145,14 +153,18 @@ def load_data(aba):
         
         if not values:
             st.error(f'Nenhum dado encontrado na aba {aba}')
-            return None
+            return None, None
             
         data = []
         current_objective = None
+        ultima_atualizacao = None
         
         for row in values:
             if len(row) > 0:
-                if 'OBJETIVO' in str(row[0]).upper():
+                # Verificar se é a linha da última atualização
+                if 'ltima atualiza' in str(row[0]).lower():
+                    ultima_atualizacao = row[1] if len(row) > 1 else ''
+                elif 'OBJETIVO' in str(row[0]).upper():
                     current_objective = row[1] if len(row) > 1 else row[0]
                 elif 'KR' in str(row[0]).upper():
                     row_data = row + [''] * (5 - len(row))
@@ -167,15 +179,16 @@ def load_data(aba):
                         'Descrição': row[1],
                         'Valor Inicial': row[2] if len(row) > 2 else '0',
                         'Valor Atual': row[3] if len(row) > 3 else '0',
-                        'Meta': row[4] if len(row) > 4 else '0'
+                        'Meta': row[4] if len(row) > 4 else '0',
+                        'Ultima_Atualizacao': ultima_atualizacao
                     })
         
         df = pd.DataFrame(data)
-        return df
+        return df, ultima_atualizacao
         
     except Exception as e:
         st.error(f"Erro ao carregar dados: {str(e)}")
-        return None
+        return None, None
 
 # Interface do Dashboard
 st.markdown('<p class="dashboard-title">📊 Dashboard OKRs GROU 2025</p>', unsafe_allow_html=True)
@@ -187,9 +200,13 @@ if st.sidebar.button("🔄 Atualizar Dados"):
 selected_team = st.sidebar.selectbox("Selecione o Time", TIMES)
 
 # Carregar dados do time selecionado
-df = load_data(selected_team)
+df, ultima_atualizacao = load_data(selected_team)
 if df is not None:
     st.markdown(f'<p class="team-title">OKRs - Time {selected_team}</p>', unsafe_allow_html=True)
+    
+    # Exibir última atualização
+    if ultima_atualizacao:
+        st.markdown(f'<p class="last-update">Última atualização: {ultima_atualizacao}</p>', unsafe_allow_html=True)
     
     for idx, objetivo in enumerate(df['Objetivo'].unique(), 1):
         if objetivo is not None:
@@ -245,7 +262,7 @@ if df is not None:
                             if progresso >= 91:
                                 progress_color = '#39FF14'  # Verde neon
                             elif progresso >= 81:
-                                progress_color = '#8149f2'  # Roxo (ajustado)
+                                progress_color = '#8149f2'  # Roxo
                             elif progresso >= 61:
                                 progress_color = '#FFD700'  # Amarelo
                             else:
