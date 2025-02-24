@@ -326,7 +326,7 @@ if df is not None:
         
         with col1:
             # Criar velocímetro sem background
-            fig = go.Figure(go.Indicator(
+                   fig = go.Figure(go.Indicator(
                 mode = "gauge+number",
                 value = team_progress,
                 number = {'suffix': "%", 'font': {'size': 40, 'color': CORES['white']}},
@@ -344,7 +344,6 @@ if df is not None:
                     'steps': [
                         {'range': [0, 60], 'color': 'rgba(255, 0, 0, 0.2)'},
                         {'range': [61, 80], 'color': 'rgba(255, 215, 0, 0.2)'},
-                        {'range': [81, 90], 'color': 'rgba(129, 73, 242, 0.2)
                         {'range': [81, 90], 'color': 'rgba(129, 73, 242, 0.2)'},
                         {'range': [91, 100], 'color': 'rgba(57, 255, 20, 0.2)'}
                     ]
