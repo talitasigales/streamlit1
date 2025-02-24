@@ -170,13 +170,20 @@ st.markdown(f"""
     <style>
     .main {{
         background-color: {CORES['background']};
+        padding: 0;
+    }}
+    
+    .block-container {{
+        padding-top: 0;
+        padding-bottom: 0;
+        margin: 0;
     }}
     
     .dashboard-title-container {{
         background-color: #8149f2;
         padding: 20px;
         border-radius: 10px;
-        margin-bottom: 40px;
+        margin: 0 0 40px 0;
         text-align: center;
     }}
     
@@ -189,10 +196,22 @@ st.markdown(f"""
     
     .login-container {{
         max-width: 400px;
-        margin: 0 auto;
-        padding: 20px;
+        margin: 40px auto;
+        padding: 30px;
         background-color: {CORES['card']};
         border-radius: 10px;
+        border: 1px solid {CORES['accent']};
+    }}
+    
+    .login-container h3 {{
+        color: {CORES['accent']};
+        text-align: center;
+        margin-bottom: 20px;
+    }}
+    
+    .stTextInput > div > div > input {{
+        background-color: {CORES['background']};
+        color: {CORES['white']};
         border: 1px solid {CORES['accent']};
     }}
     
@@ -258,8 +277,13 @@ st.markdown(f"""
         border: none !important;
         width: 100%;
     }}
+    
+    div[data-testid="stMarkdownContainer"] > p {{
+        color: {CORES['white']};
+        margin: 0;
+    }}
     </style>
-    """, unsafe_allow_html=True)
+    """, unsafe_html=True)
 
 # Configurações do Google Sheets
 SHEET_ID = '1w8ciieZ_r3nYkYROZ0RpubATJZ6NWdDOmDZQMUV4Mac'
@@ -277,10 +301,10 @@ if not st.session_state.authenticated:
         <div class="dashboard-title-container">
             <p class="dashboard-title">📊 Dashboard OKRs GROU 2025</p>
         </div>
-    """, unsafe_allow_html=True)
+    """, unsafe_html=True)
     
-    st.markdown('<div class="login-container">', unsafe_allow_html=True)
-    st.markdown("### Login com E-mail Corporativo")
+    st.markdown('<div class="login-container">', unsafe_html=True)
+    st.markdown("<h3>Login com E-mail Corporativo</h3>", unsafe_html=True)
     
     email = st.text_input("E-mail (@grougp.com.br)")
     password = st.text_input("Senha", type="password")
@@ -294,7 +318,7 @@ if not st.session_state.authenticated:
         else:
             st.error("Por favor, use seu e-mail corporativo @grougp.com.br")
     
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_html=True)
 
 else:
     # Interface do Dashboard
@@ -302,7 +326,7 @@ else:
         <div class="dashboard-title-container">
             <p class="dashboard-title">📊 Dashboard OKRs GROU 2025</p>
         </div>
-    """, unsafe_allow_html=True)
+    """, unsafe_html=True)
 
     # Sidebar
     st.sidebar.markdown(f"### Usuário: {st.session_state.user_email}")
@@ -327,7 +351,6 @@ else:
         
         for idx, objetivo in enumerate(df['Objetivo'].unique(), 1):
             if objetivo is not None:
-                st.markdown('<div class="objective-section">', unsafe_html=True)
                 st.markdown(f'<p class="objective-title">Objetivo {idx}: {objetivo}</p>', unsafe_html=True)
                 
                 krs_obj = df[df['Objetivo'] == objetivo]
@@ -366,13 +389,13 @@ else:
                                     restante_display = f"{valor_restante:,.0f}"
 
                                 if progresso >= 91:
-                                    progress_color = '#39FF14'  # Verde neon
+                                    progress_color = '#39FF14'
                                 elif progresso >= 81:
-                                    progress_color = '#8149f2'  # Roxo
+                                    progress_color = '#8149f2'
                                 elif progresso >= 61:
-                                    progress_color = '#FFD700'  # Amarelo
+                                    progress_color = '#FFD700'
                                 else:
-                                    progress_color = '#FF0000'  # Vermelho
+                                    progress_color = '#FF0000'
                                 
                                 st.markdown(f"""
                                     <div class="metric-card">
@@ -381,6 +404,7 @@ else:
                                         <div class="metric-value">{valor_display}</div>
                                         <div class="metric-target">Meta: {meta_display}</div>
                                         <div style="margin: 15px 0;">
+                                            <div style="height: 6px; background-color: rgba(229,228,231,0.
                                             <div style="height: 6px; background-color: rgba(229,228,231,0.2); border-radius: 3px;">
                                                 <div style="width: {progresso}%; height: 100%; background-color: {progress_color}; border-radius: 3px; transition: all 0.3s ease;"></div>
                                             </div>
@@ -490,4 +514,4 @@ st.markdown(f"""
     <div style="text-align: center; color: {CORES['white']};">
         Dashboard OKRs GROU • Atualizado automaticamente
     </div>
-    """, unsafe_html=True)
+""", unsafe_html=True)
