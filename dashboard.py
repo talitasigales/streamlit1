@@ -142,17 +142,9 @@ def load_data(aba):
         service = build('sheets', 'v4', credentials=credentials)
         sheet = service.spreadsheets()
         
-        # Primeiro, vamos buscar a data de última atualização
-        RANGE_NAME_UPDATE = f"{aba}!H1"
-        result_update = sheet.values().get(
-            spreadsheetId=SHEET_ID,
-            range=RANGE_NAME_UPDATE
-        ).execute()
+        # Buscar todos os dados incluindo a coluna H
+        RANGE_NAME = f"{aba}!A1:H50"
         
-        ultima_atualizacao = result_update.get('values', [['']])[0][0] if result_update.get('values') else ''
-        
-        # Agora, vamos buscar os dados principais
-        RANGE_NAME = f"{aba}!A1:E50"
         result = sheet.values().get(
             spreadsheetId=SHEET_ID,
             range=RANGE_NAME
@@ -166,6 +158,13 @@ def load_data(aba):
             
         data = []
         current_objective = None
+        ultima_atualizacao = None
+        
+        # Obter a última atualização da segunda linha, coluna H
+        if len(values) > 1 and len(values[1]) >= 8:  # Alterado para índice 1 (segunda linha)
+            ultima_atualizacao = values[1][7]  # Índice 7 corresponde à coluna H
+            if ultima_atualizacao.startswith('Última atualização:'):
+                ultima_atualizacao = ultima_atualizacao.replace('Última atualização:', '').strip()
         
         for row in values:
             if len(row) > 0:
@@ -208,7 +207,7 @@ df, ultima_atualizacao = load_data(selected_team)
 if df is not None:
     st.markdown(f'<p class="team-title">OKRs - Time {selected_team}</p>', unsafe_allow_html=True)
     
-    # Exibir última atualização
+    # Exibir última atualização apenas se existir
     if ultima_atualizacao:
         st.markdown(f'<p class="last-update">Última atualização: {ultima_atualizacao}</p>', unsafe_allow_html=True)
     
@@ -345,6 +344,7 @@ if df is not None:
                     'steps': [
                         {'range': [0, 60], 'color': 'rgba(255, 0, 0, 0.2)'},
                         {'range': [61, 80], 'color': 'rgba(255, 215, 0, 0.2)'},
+                        {'range': [81, 90], 'color': 'rgba(129, 73, 242, 0.2)
                         {'range': [81, 90], 'color': 'rgba(129, 73, 242, 0.2)'},
                         {'range': [91, 100], 'color': 'rgba(57, 255, 20, 0.2)'}
                     ]
