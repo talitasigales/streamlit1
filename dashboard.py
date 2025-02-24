@@ -388,15 +388,15 @@ else:
                                     meta_display = f"{meta:,.0f}"
                                     restante_display = f"{valor_restante:,.0f}"
 
-# Determinar cor da barra de progresso
-if progresso >= 91:
-    progress_color = '#39FF14'  # Verde neon
-elif progresso >= 81:
-    progress_color = '#8149f2'  # Roxo
-elif progresso >= 61:
-    progress_color = '#FFD700'  # Amarelo
-else:
-    progress_color = '#FF0000'  # Vermelho
+                                # Determinar cor da barra de progresso
+                                if progresso >= 91:
+                                    progress_color = '#39FF14'  # Verde neon
+                                elif progresso >= 81:
+                                    progress_color = '#8149f2'  # Roxo
+                                elif progresso >= 61:
+                                    progress_color = '#FFD700'  # Amarelo
+                                else:
+                                    progress_color = '#FF0000'  # Vermelho
 
 # Card do KR com HTML corrigido
 st.markdown(f"""
