@@ -1,9 +1,92 @@
 import streamlit as st
-import pandas as pd
-from google.oauth2.service_account import Credentials
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
-import plotly.express as px
-import plotly.graph_objects as go
+
+# Configuração do OAuth
+def create_oauth_flow():
+    client_config = {
+        "web": {
+            "client_id": st.secrets["oauth"]["client_id"],
+            "client_secret": st.secrets["oauth"]["client_secret"],
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "redirect_uri": st.secrets["oauth"]["redirect_uri"],
+            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs"
+        }
+    }
+    
+    flow = Flow.from_client_config(
+        client_config,
+        scopes=[
+            'https://www.googleapis.com/auth/spreadsheets',
+            'https://www.googleapis.com/auth/userinfo.email'
+        ],
+        redirect_uri=st.secrets["oauth"]["redirect_uri"]
+    )
+    return flow
+
+# Função de autenticação
+def authenticate():
+    if 'token' not in st.session_state:
+        flow = create_oauth_flow()
+        authorization_url, _ = flow.authorization_url(
+            access_type='offline',
+            include_granted_scopes='true'
+        )
+        st.markdown(
+            f'<a href="{authorization_url}" target="_self"><button style="background-color: #5abebe; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">Login com Google</button></a>',
+            unsafe_allow_html=True
+        )
+        return None
+
+    try:
+        credentials = Credentials.from_authorized_user_info(st.session_state.token)
+        return credentials
+    except Exception as e:
+        st.error(f"Erro na autenticação: {str(e)}")
+        st.session_state.clear()
+        return None
+
+# Verificação de domínio
+def verify_email_domain(credentials):
+    try:
+        service = build('oauth2', 'v2', credentials=credentials)
+        user_info = service.userinfo().get().execute()
+        email = user_info.get('email', '')
+        return email.endswith('@grougp.com.br'), email
+    except Exception as e:
+        st.error(f"Erro na verificação do email: {str(e)}")
+        return False, None
+
+# Início do app
+if 'token' not in st.session_state and 'code' in st.experimental_get_query_params():
+    try:
+        code = st.experimental_get_query_params()['code'][0]
+        flow = create_oauth_flow()
+        token = flow.fetch_token(code=code)
+        st.session_state.token = token
+        st.experimental_rerun()
+    except Exception as e:
+        st.error(f"Erro ao processar autenticação: {str(e)}")
+
+# Autenticação principal
+credentials = authenticate()
+if not credentials:
+    st.stop()
+
+# Verificação de domínio
+is_valid_domain, user_email = verify_email_domain(credentials)
+if not is_valid_domain:
+    st.error('Por favor, use um email @grougp.com.br')
+    st.session_state.clear()
+    st.stop()
+
+# Se chegou aqui, usuário está autenticado e validado
+st.sidebar.success(f"Logado como: {user_email}")
+if st.sidebar.button("Logout"):
+    st.session_state.clear()
+    st.experimental_rerun()
 
 # Cores da marca
 CORES = {
