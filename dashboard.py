@@ -60,9 +60,9 @@ def verify_email_domain(credentials):
         return False, None
 
 # Início do app
-if 'token' not in st.session_state and 'code' in st.experimental_get_query_params():
+if 'token' not in st.session_state and 'code' in st.query_params:
     try:
-        code = st.experimental_get_query_params()['code'][0]
+        code = st.query_params['code']  # Não precisa mais do [0] pois não retorna lista
         flow = create_oauth_flow()
         token = flow.fetch_token(code=code)
         st.session_state.token = token
