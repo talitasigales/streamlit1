@@ -283,7 +283,7 @@ st.markdown(f"""
         margin: 0;
     }}
     </style>
-    """, unsafe_html=True)
+    """, unsafe_allow_html=True)
 
 # Configurações do Google Sheets
 SHEET_ID = '1w8ciieZ_r3nYkYROZ0RpubATJZ6NWdDOmDZQMUV4Mac'
@@ -301,10 +301,10 @@ if not st.session_state.authenticated:
         <div class="dashboard-title-container">
             <p class="dashboard-title">📊 Dashboard OKRs GROU 2025</p>
         </div>
-    """, unsafe_html=True)
+    """, unsafe_allow_html=True)
     
-    st.markdown('<div class="login-container">', unsafe_html=True)
-    st.markdown("<h3>Login com E-mail Corporativo</h3>", unsafe_html=True)
+    st.markdown('<div class="login-container">', unsafe_allow_html=True)
+    st.markdown("<h3>Login com E-mail Corporativo</h3>", unsafe_allow_html=True)
     
     email = st.text_input("E-mail (@grougp.com.br)")
     password = st.text_input("Senha", type="password")
@@ -318,7 +318,7 @@ if not st.session_state.authenticated:
         else:
             st.error("Por favor, use seu e-mail corporativo @grougp.com.br")
     
-    st.markdown('</div>', unsafe_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 else:
     # Interface do Dashboard
@@ -326,7 +326,7 @@ else:
         <div class="dashboard-title-container">
             <p class="dashboard-title">📊 Dashboard OKRs GROU 2025</p>
         </div>
-    """, unsafe_html=True)
+    """, unsafe_allow_html=True)
 
     # Sidebar
     st.sidebar.markdown(f"### Usuário: {st.session_state.user_email}")
@@ -347,11 +347,11 @@ else:
     df = load_data(selected_team)
 
     if df is not None:
-        st.markdown(f'<p class="team-title">OKRs - Time {selected_team}</p>', unsafe_html=True)
+        st.markdown(f'<p class="team-title">OKRs - Time {selected_team}</p>', unsafe_allow_html=True)
         
         for idx, objetivo in enumerate(df['Objetivo'].unique(), 1):
             if objetivo is not None:
-                st.markdown(f'<p class="objective-title">Objetivo {idx}: {objetivo}</p>', unsafe_html=True)
+                st.markdown(f'<p class="objective-title">Objetivo {idx}: {objetivo}</p>', unsafe_allow_html=True)
                 
                 krs_obj = df[df['Objetivo'] == objetivo]
                 
@@ -388,130 +388,31 @@ else:
                                     meta_display = f"{meta:,.0f}"
                                     restante_display = f"{valor_restante:,.0f}"
 
-                                if progresso >= 91:
-                                    progress_color = '#39FF14'
-                                elif progresso >= 81:
-                                    progress_color = '#8149f2'
-                                elif progresso >= 61:
-                                    progress_color = '#FFD700'
-                                else:
-                                    progress_color = '#FF0000'
-                                
-                                st.markdown(f"""
-                                    <div class="metric-card">
-                                        <div class="kr-title">KR {kr['KR']}</div>
-                                        <p class="kr-description">{kr['Descrição']}</p>
-                                        <div class="metric-value">{valor_display}</div>
-                                        <div class="metric-target">Meta: {meta_display}</div>
-                                        <div style="margin: 15px 0;">
-                                            <div style="height: 6px; background-color: rgba(229,228,231,0.
-                                            <div style="height: 6px; background-color: rgba(229,228,231,0.2); border-radius: 3px;">
-                                                <div style="width: {progresso}%; height: 100%; background-color: {progress_color}; border-radius: 3px; transition: all 0.3s ease;"></div>
-                                            </div>
-                                        </div>
-                                        <div class="progress-label" style="display: flex; justify-content: space-between;">
-                                            <span>Progresso: {progresso:.1f}%</span>
-                                            <span class="remaining-value">Faltam: {restante_display}</span>
-                                        </div>
-                                    </div>
-                                """, unsafe_html=True)
-                            
-                            except Exception as e:
-                                st.error(f"Erro ao processar KR {kr['KR']}: {str(e)}")
+# Determinar cor da barra de progresso
+if progresso >= 91:
+    progress_color = '#39FF14'  # Verde neon
+elif progresso >= 81:
+    progress_color = '#8149f2'  # Roxo
+elif progresso >= 61:
+    progress_color = '#FFD700'  # Amarelo
+else:
+    progress_color = '#FF0000'  # Vermelho
 
-        # Visão Geral do Progresso
-        st.markdown('<p class="objective-title">Visão Geral do Progresso</p>', unsafe_html=True)
-        
-        try:
-            progress_by_objective = {}
-            for objetivo in df['Objetivo'].unique():
-                krs_obj = df[df['Objetivo'] == objetivo]
-                objetivo_progress = []
-                
-                for _, kr in krs_obj.iterrows():
-                    try:
-                        valor_atual = float(kr['Valor Atual'].replace('%', '').replace('R$', '').replace('.', '').replace(',', '.') if kr['Valor Atual'] else '0')
-                        meta = float(kr['Meta'].replace('%', '').replace('R$', '').replace('.', '').replace(',', '.') if kr['Meta'] else '0')
-                        progresso = (valor_atual / meta * 100) if meta != 0 else 0
-                        objetivo_progress.append(min(progresso, 100))
-                    except:
-                        continue
-                
-                if objetivo_progress:
-                    progress_by_objective[objetivo] = sum(objetivo_progress) / len(objetivo_progress)
-            
-            team_progress = sum(progress_by_objective.values()) / len(progress_by_objective) if progress_by_objective else 0
-            
-            col1, col2 = st.columns([1, 1])
-            
-            with col1:
-                fig = go.Figure(go.Indicator(
-                    mode = "gauge+number",
-                    value = team_progress,
-                    number = {'suffix': "%", 'font': {'size': 40, 'color': CORES['white']}},
-                    title = {'text': "Progresso Geral do Time", 'font': {'size': 20, 'color': CORES['accent']}},
-                    gauge = {
-                        'axis': {'range': [0, 100], 'tickcolor': CORES['white']},
-                        'bar': {'color': 
-                            '#39FF14' if team_progress >= 91 else
-                            '#8149f2' if team_progress >= 81 else
-                            '#FFD700' if team_progress >= 61 else
-                            '#FF0000'
-                        },
-                        'bgcolor': 'rgba(0,0,0,0)',
-                        'borderwidth': 0,
-                        'steps': [
-                            {'range': [0, 60], 'color': 'rgba(255, 0, 0, 0.2)'},
-                            {'range': [61, 80], 'color': 'rgba(255, 215, 0, 0.2)'},
-                            {'range': [81, 90], 'color': 'rgba(129, 73, 242, 0.2)'},
-                            {'range': [91, 100], 'color': 'rgba(57, 255, 20, 0.2)'}
-                        ]
-                    }
-                ))
-                
-                fig.update_layout(
-                    paper_bgcolor = 'rgba(0,0,0,0)',
-                    plot_bgcolor = 'rgba(0,0,0,0)',
-                    font = {'color': CORES['white']},
-                    height = 300,
-                    margin = dict(t=60, b=0),
-                    showlegend = False
-                )
-                
-                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-            
-            with col2:
-                st.markdown("""
-                    <h3 style="color: #5abebe; font-size: 18px; margin-bottom: 20px;">
-                        Progresso por Objetivo
-                    </h3>
-                """, unsafe_html=True)
-                
-                for objetivo, progresso in progress_by_objective.items():
-                    st.markdown(f"""
-                        <div style="padding: 15px; background-color: transparent; border: 1px solid {CORES['accent']}; border-radius: 8px; margin: 10px 0;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                                <span style="color: {CORES['white']};">{objetivo}</span>
-                                <span style="color: {CORES['accent']};">{progresso:.1f}%</span>
-                            </div>
-                            <div style="height: 6px; background-color: rgba(229,228,231,0.2); border-radius: 3px;">
-                                <div style="width: {progresso}%; height: 100%; background-color: {
-                                    '#39FF14' if progresso >= 91 else
-                                    '#8149f2' if progresso >= 81 else
-                                    '#FFD700' if progresso >= 61 else
-                                    '#FF0000'
-                                }; border-radius: 3px;"></div>
-                            </div>
-                        </div>
-                    """, unsafe_html=True)
-
-        except Exception as e:
-            st.error(f"Erro ao gerar visualização de progresso: {str(e)}")
-
-# Rodapé
-st.markdown("---")
+# Card do KR com HTML corrigido
 st.markdown(f"""
-    <div style="text-align: center; color: {CORES['white']};">
-        Dashboard OKRs GROU • Atualizado automaticamente
+    <div class="metric-card">
+        <div class="kr-title">KR {kr['KR']}</div>
+        <p class="kr-description">{kr['Descrição']}</p>
+        <div class="metric-value">{valor_display}</div>
+        <div class="metric-target">Meta: {meta_display}</div>
+        <div style="margin: 15px 0;">
+            <div style="height: 6px; background-color: rgba(229,228,231,0.2); border-radius: 3px;">
+                <div style="width: {progresso}%; height: 100%; background-color: {progress_color}; border-radius: 3px; transition: all 0.3s ease;"></div>
+            </div>
+        </div>
+        <div class="progress-label" style="display: flex; justify-content: space-between;">
+            <span>Progresso: {progresso:.1f}%</span>
+            <span class="remaining-value">Faltam: {restante_display}</span>
+        </div>
     </div>
-""", unsafe_html=True)
+""", unsafe_allow_html=True)                        
