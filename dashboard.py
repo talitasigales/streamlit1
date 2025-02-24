@@ -33,8 +33,7 @@ def get_user_team(email):
         return team
     return None
 
-def sync_sheet_updates():
-    """Sincroniza atualizações feitas diretamente na planilha"""
+def log_update(team, kr, old_value, new_value, user_email):
     try:
         credentials = Credentials.from_service_account_info(
             st.secrets["gcp_service_account"],
@@ -44,62 +43,127 @@ def sync_sheet_updates():
         service = build('sheets', 'v4', credentials=credentials)
         sheet = service.spreadsheets()
         
-        # Para cada time
-        for team in TIMES:
-            # Ler dados da aba do time
-            result = sheet.values().get(
+        log_range = 'Log!A:G'
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        body = {
+            'values': [[
+                timestamp,
+                user_email,
+                team,
+                kr,
+                old_value,
+                new_value,
+                'Atualização via Dashboard'
+            ]]
+        }
+        
+        service.spreadsheets().values().append(
+            spreadsheetId=SHEET_ID,
+            range=log_range,
+            valueInputOption='USER_ENTERED',
+            insertDataOption='INSERT_ROWS',
+            body=body
+        ).execute()
+            
+    except Exception as e:
+        st.error(f"Erro ao registrar log: {str(e)}")
+
+def update_sheet_value(team, kr, new_value, user_email):
+    try:
+        credentials = Credentials.from_service_account_info(
+            st.secrets["gcp_service_account"],
+            scopes=['https://www.googleapis.com/auth/spreadsheets']
+        )
+        
+        service = build('sheets', 'v4', credentials=credentials)
+        sheet = service.spreadsheets()
+        
+        result = sheet.values().get(
+            spreadsheetId=SHEET_ID,
+            range=f"{team}!A1:E50"
+        ).execute()
+        
+        values = result.get('values', [])
+        row_index = None
+        old_value = None
+        
+        for i, row in enumerate(values):
+            if kr in row[0]:
+                row_index = i + 1
+                old_value = row[3] if len(row) > 3 else '0'
+                break
+        
+        if row_index:
+            range_name = f"{team}!D{row_index}"
+            body = {
+                'values': [[new_value]]
+            }
+            
+            service.spreadsheets().values().update(
                 spreadsheetId=SHEET_ID,
-                range=f"{team}!A1:E50"
+                range=range_name,
+                valueInputOption='USER_ENTERED',
+                body=body
             ).execute()
             
-            values = result.get('values', [])
-            if not values:
-                continue
-                
-            # Processar cada linha
-            for i, row in enumerate(values):
-                if len(row) > 3 and 'KR' in str(row[0]).upper():
-                    kr_id = row[0]
-                    valor_atual = row[3]
-                    
-                    # Atualizar nas outras abas se necessário
-                    for other_team in TIMES:
-                        if other_team != team:
-                            # Verificar se o KR existe na outra aba
-                            other_result = sheet.values().get(
-                                spreadsheetId=SHEET_ID,
-                                range=f"{other_team}!A1:E50"
-                            ).execute()
-                            
-                            other_values = other_result.get('values', [])
-                            if not other_values:
-                                continue
-                            
-                            # Procurar o mesmo KR
-                            for j, other_row in enumerate(other_values):
-                                if len(other_row) > 0 and kr_id == other_row[0]:
-                                    # Atualizar valor
-                                    sheet.values().update(
-                                        spreadsheetId=SHEET_ID,
-                                        range=f"{other_team}!D{j+1}",
-                                        valueInputOption='USER_ENTERED',
-                                        body={'values': [[valor_atual]]}
-                                    ).execute()
-                                    
-                                    # Registrar no log
-                                    log_update(
-                                        team=other_team,
-                                        kr=kr_id,
-                                        old_value=other_row[3] if len(other_row) > 3 else '0',
-                                        new_value=valor_atual,
-                                        user_email='sync_system@grougp.com.br'
-                                    )
-                                    break
-        
-        return True
+            log_update(team, kr, old_value, new_value, user_email)
+            
     except Exception as e:
-        st.error(f"Erro na sincronização: {str(e)}")
-        return False
+        raise Exception(f"Erro ao atualizar planilha: {str(e)}")
+
+def load_data(aba):
+    try:
+        credentials = Credentials.from_service_account_info(
+            st.secrets["gcp_service_account"],
+            scopes=['https://www.googleapis.com/auth/spreadsheets.readonly']
+        )
+        
+        service = build('sheets', 'v4', credentials=credentials)
+        sheet = service.spreadsheets()
+        
+        RANGE_NAME = f"{aba}!A1:E50"
+        
+        result = sheet.values().get(
+            spreadsheetId=SHEET_ID,
+            range=RANGE_NAME
+        ).execute()
+        
+        values = result.get('values', [])
+        
+        if not values:
+            st.error(f'Nenhum dado encontrado na aba {aba}')
+            return None
+            
+        data = []
+        current_objective = None
+        
+        for row in values:
+            if len(row) > 0:
+                if 'OBJETIVO' in str(row[0]).upper():
+                    current_objective = row[1] if len(row) > 1 else row[0]
+                elif 'KR' in str(row[0]).upper():
+                    row_data = row + [''] * (5 - len(row))
+                    
+                    kr_number = row[0].strip()
+                    if 'KR' in kr_number.upper():
+                        kr_number = kr_number.upper().replace('KR', '').strip()
+                    
+                    data.append({
+                        'Objetivo': current_objective,
+                        'KR': kr_number,
+                        'Descrição': row[1],
+                        'Valor Inicial': row[2] if len(row) > 2 else '0',
+                        'Valor Atual': row[3] if len(row) > 3 else '0',
+                        'Meta': row[4] if len(row) > 4 else '0'
+                    })
+        
+        df = pd.DataFrame(data)
+        return df
+        
+    except Exception as e:
+        st.error(f"Erro ao carregar dados: {str(e)}")
+        return None
 
 # Estilos CSS
 st.markdown(f"""
@@ -201,12 +265,11 @@ st.markdown(f"""
 SHEET_ID = '1w8ciieZ_r3nYkYROZ0RpubATJZ6NWdDOmDZQMUV4Mac'
 TIMES = ['Marketing', 'Comercial', 'Trainers', 'SDR', 'ADM', 'CS']
 
-# Estado da sessão para autenticação e atualização
+# Estado da sessão para autenticação
 if 'authenticated' not in st.session_state:
     st.session_state.authenticated = False
     st.session_state.user_email = None
     st.session_state.user_team = None
-    st.session_state.last_update = time.time()
 
 # Interface de Login ou Dashboard
 if not st.session_state.authenticated:
@@ -234,13 +297,6 @@ if not st.session_state.authenticated:
     st.markdown('</div>', unsafe_allow_html=True)
 
 else:
-    # Verificar necessidade de atualização automática
-    current_time = time.time()
-    if current_time - st.session_state.last_update > 300:  # 5 minutos
-        with st.spinner('Sincronizando dados...'):
-            sync_sheet_updates()
-            st.session_state.last_update = current_time
-
     # Interface do Dashboard
     st.markdown("""
         <div class="dashboard-title-container">
@@ -257,34 +313,8 @@ else:
         st.rerun()
 
     if st.sidebar.button("🔄 Atualizar Dados"):
-        with st.spinner('Sincronizando dados...'):
-            sync_sheet_updates()
-            st.cache_data.clear()
-            st.rerun()
-
-    # Interface de edição para o time do usuário
-    user_team = st.session_state.user_team
-    if user_team:
-        st.sidebar.markdown("### Atualizar Valores")
-        df_edit = load_data(user_team)
-        
-        if df_edit is not None:
-            for _, row in df_edit.iterrows():
-                st.sidebar.markdown(f"**{row['Descrição']}**")
-                novo_valor = st.sidebar.text_input(
-                    f"Valor Atual para KR {row['KR']}",
-                    value=row['Valor Atual'],
-                    key=f"input_{row['KR']}"
-                )
-                
-                if st.sidebar.button(f"Atualizar KR {row['KR']}"):
-                    try:
-                        update_sheet_value(user_team, row['KR'], novo_valor, st.session_state.user_email)
-                        sync_sheet_updates()  # Sincroniza após atualização
-                        st.sidebar.success("Valor atualizado com sucesso!")
-                        st.rerun()
-                    except Exception as e:
-                        st.sidebar.error(f"Erro ao atualizar: {str(e)}")
+        st.cache_data.clear()
+        st.rerun()
 
     # Seletor de Time
     selected_team = st.sidebar.selectbox("Selecione o Time para Visualizar", TIMES)
@@ -336,13 +366,13 @@ else:
                                     restante_display = f"{valor_restante:,.0f}"
 
                                 if progresso >= 91:
-                                    progress_color = '#39FF14'
+                                    progress_color = '#39FF14'  # Verde neon
                                 elif progresso >= 81:
-                                    progress_color = '#8149f2'
+                                    progress_color = '#8149f2'  # Roxo
                                 elif progresso >= 61:
-                                    progress_color = '#FFD700'
+                                    progress_color = '#FFD700'  # Amarelo
                                 else:
-                                    progress_color = '#FF0000'
+                                    progress_color = '#FF0000'  # Vermelho
                                 
                                 st.markdown(f"""
                                     <div class="metric-card">
@@ -360,15 +390,99 @@ else:
                                             <span class="remaining-value">Faltam: {restante_display}</span>
                                         </div>
                                     </div>
-                                    """, unsafe_html=True)
-                                
+                                """, unsafe_html=True)
+                            
                             except Exception as e:
                                 st.error(f"Erro ao processar KR {kr['KR']}: {str(e)}")
-                
-                st.markdown('</div>', unsafe_html=True)
 
-        # Visão Geral do Progresso e gráficos continuam iguais...
-        # (O resto do código permanece o mesmo)
+        # Visão Geral do Progresso
+        st.markdown('<p class="objective-title">Visão Geral do Progresso</p>', unsafe_html=True)
+        
+        try:
+            progress_by_objective = {}
+            for objetivo in df['Objetivo'].unique():
+                krs_obj = df[df['Objetivo'] == objetivo]
+                objetivo_progress = []
+                
+                for _, kr in krs_obj.iterrows():
+                    try:
+                        valor_atual = float(kr['Valor Atual'].replace('%', '').replace('R$', '').replace('.', '').replace(',', '.') if kr['Valor Atual'] else '0')
+                        meta = float(kr['Meta'].replace('%', '').replace('R$', '').replace('.', '').replace(',', '.') if kr['Meta'] else '0')
+                        progresso = (valor_atual / meta * 100) if meta != 0 else 0
+                        objetivo_progress.append(min(progresso, 100))
+                    except:
+                        continue
+                
+                if objetivo_progress:
+                    progress_by_objective[objetivo] = sum(objetivo_progress) / len(objetivo_progress)
+            
+            team_progress = sum(progress_by_objective.values()) / len(progress_by_objective) if progress_by_objective else 0
+            
+            col1, col2 = st.columns([1, 1])
+            
+            with col1:
+                fig = go.Figure(go.Indicator(
+                    mode = "gauge+number",
+                    value = team_progress,
+                    number = {'suffix': "%", 'font': {'size': 40, 'color': CORES['white']}},
+                    title = {'text': "Progresso Geral do Time", 'font': {'size': 20, 'color': CORES['accent']}},
+                    gauge = {
+                        'axis': {'range': [0, 100], 'tickcolor': CORES['white']},
+                        'bar': {'color': 
+                            '#39FF14' if team_progress >= 91 else
+                            '#8149f2' if team_progress >= 81 else
+                            '#FFD700' if team_progress >= 61 else
+                            '#FF0000'
+                        },
+                        'bgcolor': 'rgba(0,0,0,0)',
+                        'borderwidth': 0,
+                        'steps': [
+                            {'range': [0, 60], 'color': 'rgba(255, 0, 0, 0.2)'},
+                            {'range': [61, 80], 'color': 'rgba(255, 215, 0, 0.2)'},
+                            {'range': [81, 90], 'color': 'rgba(129, 73, 242, 0.2)'},
+                            {'range': [91, 100], 'color': 'rgba(57, 255, 20, 0.2)'}
+                        ]
+                    }
+                ))
+                
+                fig.update_layout(
+                    paper_bgcolor = 'rgba(0,0,0,0)',
+                    plot_bgcolor = 'rgba(0,0,0,0)',
+                    font = {'color': CORES['white']},
+                    height = 300,
+                    margin = dict(t=60, b=0),
+                    showlegend = False
+                )
+                
+                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+            
+            with col2:
+                st.markdown("""
+                    <h3 style="color: #5abebe; font-size: 18px; margin-bottom: 20px;">
+                        Progresso por Objetivo
+                    </h3>
+                """, unsafe_html=True)
+                
+                for objetivo, progresso in progress_by_objective.items():
+                    st.markdown(f"""
+                        <div style="padding: 15px; background-color: transparent; border: 1px solid {CORES['accent']}; border-radius: 8px; margin: 10px 0;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                <span style="color: {CORES['white']};">{objetivo}</span>
+                                <span style="color: {CORES['accent']};">{progresso:.1f}%</span>
+                            </div>
+                            <div style="height: 6px; background-color: rgba(229,228,231,0.2); border-radius: 3px;">
+                                <div style="width: {progresso}%; height: 100%; background-color: {
+                                    '#39FF14' if progresso >= 91 else
+                                    '#8149f2' if progresso >= 81 else
+                                    '#FFD700' if progresso >= 61 else
+                                    '#FF0000'
+                                }; border-radius: 3px;"></div>
+                            </div>
+                        </div>
+                    """, unsafe_html=True)
+
+        except Exception as e:
+            st.error(f"Erro ao gerar visualização de progresso: {str(e)}")
 
 # Rodapé
 st.markdown("---")
