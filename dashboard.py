@@ -324,9 +324,9 @@ if df is not None:
         # Layout com duas colunas para velocímetro e progresso por objetivo
         col1, col2 = st.columns([1, 1])
         
-        with col1:
+               with col1:
             # Criar velocímetro sem background
-                   fig = go.Figure(go.Indicator(
+            fig = go.Figure(go.Indicator(
                 mode = "gauge+number",
                 value = team_progress,
                 number = {'suffix': "%", 'font': {'size': 40, 'color': CORES['white']}},
